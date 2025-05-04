@@ -33,7 +33,7 @@ public:
     static COMMAND_TYPE Mapping(std::string tok);
 
 private:
-    COMMAND_TYPE command_=COMMAND_TYPE::NONE;
+    COMMAND_TYPE command_ = COMMAND_TYPE::NONE;
     // Словарь сделан статическим, чтобы к нему был доступ из friend функции перегрузки оператора >>
     static const std::unordered_map<std::string_view, COMMAND_TYPE> commandMapping_;
 
