@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
 
         CryptoGuard::ProgramOptions options;
 
-        //Вызов парсинга аргументов
+        // Вызов парсинга аргументов
         options.Parse(argc, argv);
 
         CryptoGuard::CryptoGuardCtx cryptoCtx;
