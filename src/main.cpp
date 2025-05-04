@@ -79,6 +79,9 @@ int main(int argc, char *argv[]) {
 
         CryptoGuard::ProgramOptions options;
 
+        //Вызов парсинга аргументов
+        options.Parse(argc, argv);
+
         CryptoGuard::CryptoGuardCtx cryptoCtx;
 
         using COMMAND_TYPE = CryptoGuard::ProgramOptions::COMMAND_TYPE;
