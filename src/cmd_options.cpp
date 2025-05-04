@@ -37,11 +37,12 @@ bool ProgramOptions::Parse(int argc, char *argv[]) {
     try {
         boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc_), vm);
         boost::program_options::notify(vm);
-        if (vm.count("help")) {
+
+        if (vm.count("help")&&vm.size()==1) {
             std::cout << desc_ << std::endl;
             return true;
         } else if (vm.count("input") && vm.count("output") && vm.count("password") && vm.count("command") &&
-                   command_ != COMMAND_TYPE::CHECKSUM) {
+                   command_ != COMMAND_TYPE::CHECKSUM&&command_!=COMMAND_TYPE::NONE) {
             return true;
         } else if (vm.count("input") && command_ == COMMAND_TYPE::CHECKSUM) {
             return true;

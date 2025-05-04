@@ -97,7 +97,8 @@ int main(int argc, char *argv[]) {
         case COMMAND_TYPE::CHECKSUM:
             std::print("Checksum: {}\n", "CHECKSUM_NOT_IMPLEMENTED");
             break;
-
+        case COMMAND_TYPE::NONE:
+            break;
         default:
             throw std::runtime_error{"Unsupported command"};
         }
