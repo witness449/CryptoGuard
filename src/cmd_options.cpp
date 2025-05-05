@@ -1,7 +1,6 @@
 #include "cmd_options.h"
 #include <iostream>
 
-
 namespace CryptoGuard {
 
 // Вынесение статической константы в cpp файл
