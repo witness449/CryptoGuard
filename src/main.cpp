@@ -1,8 +1,8 @@
 #include "cmd_options.h"
 #include "crypto_guard_ctx.h"
 #include <array>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <istream>
 #include <openssl/evp.h>
 #include <print>
@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
         //
         // OpenSSL пример использования:
         //
-        //std::string input = "01234567890123456789";
+        // std::string input = "01234567890123456789";
         /*std::string output;
 
         OpenSSL_add_all_algorithms();
@@ -54,7 +54,6 @@ int main(int argc, char *argv[]) {
         // Конец примера
         //
         */
-        
 
         CryptoGuard::ProgramOptions options;
 
@@ -65,14 +64,14 @@ int main(int argc, char *argv[]) {
 
         using COMMAND_TYPE = CryptoGuard::ProgramOptions::COMMAND_TYPE;
         switch (options.GetCommand()) {
-        case COMMAND_TYPE::ENCRYPT:{
-            std::string inputFileName=options.GetInputFile();
-            std::string outputFileName=options.GetOutputFile();
-            std::ifstream* in=new std::ifstream();
-            std::ofstream* out=new std::ofstream();
+        case COMMAND_TYPE::ENCRYPT: {
+            std::string inputFileName = options.GetInputFile();
+            std::string outputFileName = options.GetOutputFile();
+            std::ifstream *in = new std::ifstream();
+            std::ofstream *out = new std::ofstream();
             in->open(inputFileName);
             out->open(outputFileName);
-            cryptoCtx.EncryptFile(*(std::iostream*)in, *(std::iostream*)out, options.GetPassword());
+            cryptoCtx.EncryptFile(*(std::iostream *)in, *(std::iostream *)out, options.GetPassword());
             in->close();
             out->close();
             delete in;
@@ -81,14 +80,14 @@ int main(int argc, char *argv[]) {
             break;
         }
 
-        case COMMAND_TYPE::DECRYPT:{
-        std::string inputFileName=options.GetInputFile();
-            std::string outputFileName=options.GetOutputFile();
-            std::ifstream* in=new std::ifstream();
-            std::ofstream* out=new std::ofstream();
+        case COMMAND_TYPE::DECRYPT: {
+            std::string inputFileName = options.GetInputFile();
+            std::string outputFileName = options.GetOutputFile();
+            std::ifstream *in = new std::ifstream();
+            std::ofstream *out = new std::ofstream();
             in->open(inputFileName);
             out->open(outputFileName);
-            cryptoCtx.DecryptFile(*(std::iostream*)in, *(std::iostream*)out, options.GetPassword());
+            cryptoCtx.DecryptFile(*(std::iostream *)in, *(std::iostream *)out, options.GetPassword());
             in->close();
             out->close();
             delete in;

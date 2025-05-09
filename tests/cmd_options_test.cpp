@@ -7,7 +7,7 @@ class cmd_options_test : public testing::Test {
     std::unique_ptr<CryptoGuard::ProgramOptions> po;
 
 public:
-    CryptoGuard::ProgramOptions* GetPo() { return po.get(); }
+    CryptoGuard::ProgramOptions *GetPo() { return po.get(); }
     void SetUp() { po = std::make_unique<CryptoGuard::ProgramOptions>(); }
     void TearDown() {}
 };
