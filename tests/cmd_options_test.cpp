@@ -1,14 +1,15 @@
 #include "cmd_options.h"
 #include <gtest/gtest.h>
+#include <memory>
 
 // Инициализация объекта проверяемого класса
 class cmd_options_test : public testing::Test {
-    CryptoGuard::ProgramOptions *po;
+    std::unique_ptr<CryptoGuard::ProgramOptions> po;
 
 public:
-    CryptoGuard::ProgramOptions *GetPo() { return po; }
-    void SetUp() { po = new CryptoGuard::ProgramOptions(); }
-    void TearDown() { delete po; }
+    CryptoGuard::ProgramOptions* GetPo() { return po.get(); }
+    void SetUp() { po = std::make_unique<CryptoGuard::ProgramOptions>(); }
+    void TearDown() {}
 };
 
 // Позитивный тест, что аргумент --help работает правильно

@@ -2,6 +2,8 @@
 #include "crypto_guard_ctx.h"
 #include <array>
 #include <iostream>
+#include <fstream>
+#include <istream>
 #include <openssl/evp.h>
 #include <print>
 #include <stdexcept>
@@ -12,8 +14,8 @@ int main(int argc, char *argv[]) {
         //
         // OpenSSL пример использования:
         //
-        /*std::string input = "01234567890123456789";
-        std::string output;
+        //std::string input = "01234567890123456789";
+        /*std::string output;
 
         OpenSSL_add_all_algorithms();
 
@@ -52,6 +54,7 @@ int main(int argc, char *argv[]) {
         // Конец примера
         //
         */
+        
 
         CryptoGuard::ProgramOptions options;
 
@@ -62,14 +65,37 @@ int main(int argc, char *argv[]) {
 
         using COMMAND_TYPE = CryptoGuard::ProgramOptions::COMMAND_TYPE;
         switch (options.GetCommand()) {
-        case COMMAND_TYPE::ENCRYPT:
+        case COMMAND_TYPE::ENCRYPT:{
+            std::string inputFileName=options.GetInputFile();
+            std::string outputFileName=options.GetOutputFile();
+            std::ifstream* in=new std::ifstream();
+            std::ofstream* out=new std::ofstream();
+            in->open(inputFileName);
+            out->open(outputFileName);
+            cryptoCtx.EncryptFile(*(std::iostream*)in, *(std::iostream*)out, options.GetPassword());
+            in->close();
+            out->close();
+            delete in;
+            delete out;
             std::print("File encoded successfully\n");
             break;
+        }
 
-        case COMMAND_TYPE::DECRYPT:
+        case COMMAND_TYPE::DECRYPT:{
+        std::string inputFileName=options.GetInputFile();
+            std::string outputFileName=options.GetOutputFile();
+            std::ifstream* in=new std::ifstream();
+            std::ofstream* out=new std::ofstream();
+            in->open(inputFileName);
+            out->open(outputFileName);
+            cryptoCtx.DecryptFile(*(std::iostream*)in, *(std::iostream*)out, options.GetPassword());
+            in->close();
+            out->close();
+            delete in;
+            delete out;
             std::print("File decoded successfully\n");
             break;
-
+        }
         case COMMAND_TYPE::CHECKSUM:
             std::print("Checksum: {}\n", "CHECKSUM_NOT_IMPLEMENTED");
             break;
