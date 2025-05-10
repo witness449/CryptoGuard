@@ -95,9 +95,15 @@ int main(int argc, char *argv[]) {
             std::print("File decoded successfully\n");
             break;
         }
-        case COMMAND_TYPE::CHECKSUM:
-            std::print("Checksum: {}\n", "CHECKSUM_NOT_IMPLEMENTED");
+        case COMMAND_TYPE::CHECKSUM: {
+            std::string inputFileName = options.GetInputFile();
+            std::ifstream *in = new std::ifstream();
+            in->open(inputFileName);
+            std::string result = cryptoCtx.CalculateChecksum(*(std::iostream *)in);
+            in->close();
+            std::print("Checksum: {}\n", result);
             break;
+        }
         case COMMAND_TYPE::NONE:
             break;
         default:

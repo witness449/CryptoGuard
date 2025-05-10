@@ -1,9 +1,11 @@
 #include "crypto_guard_ctx.h"
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <memory>
 #include <openssl/evp.h>
+#include <sstream>
 #include <streambuf>
 #include <vector>
 
@@ -26,17 +28,21 @@ struct CryptoGuardCtx::Impl {
 
     // Указатель на CTX структуру
     std::unique_ptr<EVP_CIPHER_CTX, decltype([](EVP_CIPHER_CTX *ctx) { EVP_CIPHER_CTX_free(ctx); })> ctx;
+    std::unique_ptr<EVP_MD_CTX, decltype([](EVP_MD_CTX *ctxMd) { EVP_MD_CTX_free(ctxMd); })> ctxMd;
 
     // Констурктор
     Impl() {
         OpenSSL_add_all_algorithms();
         ctx.reset(EVP_CIPHER_CTX_new());
         EVP_CIPHER_CTX_init(ctx.get());
+        ctxMd.reset(EVP_MD_CTX_new());
+        EVP_MD_CTX_init(ctxMd.get());
     }
 
     // Деструктор
     ~Impl() {
         EVP_CIPHER_CTX_init(ctx.get());
+        EVP_MD_CTX_init(ctxMd.get());
         EVP_cleanup();
     }
 
@@ -103,7 +109,36 @@ struct CryptoGuardCtx::Impl {
         op->write(outBuf.data(), outLen);
     }
 
-    std::string CalculateChecksum(std::iostream &inStream) { return "NOT IMPLEMENTED"; }
+    std::string CalculateChecksum(std::iostream &inStream) {
+        const EVP_MD *md;
+        unsigned char md_value[EVP_MAX_MD_SIZE];
+        unsigned int md_len;
+        md = EVP_get_digestbyname("md5");
+        EVP_DigestInit(ctxMd.get(), md);
+        std::vector<char> inBuf(16);
+        std::ifstream *in = (std::ifstream *)&inStream;
+
+        while (in->read(inBuf.data(), inBuf.size())) {
+            EVP_DigestUpdate(ctxMd.get(), (unsigned char *)inBuf.data(), in->gcount());
+        }
+        EVP_DigestUpdate(ctxMd.get(), (unsigned char *)inBuf.data(), in->gcount());
+        EVP_DigestFinal(ctxMd.get(), md_value, &md_len);
+
+        /*char* converted=new char[md_len];
+        int i;
+        for(i=0; i<md_len; i++){
+            sprintf(&converted[i*2], "%02X", md_value[i]);
+        }
+        printf("%s\n", converted);*/
+
+        std::stringstream ss;
+        for (int i = 0; i < md_len; i++) {
+            ss << std::setfill('0') << std::setw(2) << std::hex << (unsigned int)md_value[i];
+        }
+        std::string result = ss.str();
+
+        return result;
+    }
 };
 
 CryptoGuardCtx::CryptoGuardCtx() : pImpl_(std::make_unique<Impl>()){};
