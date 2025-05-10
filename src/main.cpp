@@ -1,9 +1,7 @@
 #include "cmd_options.h"
 #include "crypto_guard_ctx.h"
-#include <array>
 #include <fstream>
 #include <iostream>
-#include <istream>
 #include <openssl/evp.h>
 #include <print>
 #include <stdexcept>
@@ -67,15 +65,13 @@ int main(int argc, char *argv[]) {
         case COMMAND_TYPE::ENCRYPT: {
             std::string inputFileName = options.GetInputFile();
             std::string outputFileName = options.GetOutputFile();
-            std::ifstream *in = new std::ifstream();
-            std::ofstream *out = new std::ofstream();
-            in->open(inputFileName);
-            out->open(outputFileName);
-            cryptoCtx.EncryptFile(*(std::iostream *)in, *(std::iostream *)out, options.GetPassword());
-            in->close();
-            out->close();
-            delete in;
-            delete out;
+            std::ifstream in;
+            std::ofstream out;
+            in.open(inputFileName);
+            out.open(outputFileName);
+            cryptoCtx.EncryptFile(in, out, options.GetPassword());
+            in.close();
+            out.close();
             std::print("File encoded successfully\n");
             break;
         }
@@ -83,24 +79,22 @@ int main(int argc, char *argv[]) {
         case COMMAND_TYPE::DECRYPT: {
             std::string inputFileName = options.GetInputFile();
             std::string outputFileName = options.GetOutputFile();
-            std::ifstream *in = new std::ifstream();
-            std::ofstream *out = new std::ofstream();
-            in->open(inputFileName);
-            out->open(outputFileName);
-            cryptoCtx.DecryptFile(*(std::iostream *)in, *(std::iostream *)out, options.GetPassword());
-            in->close();
-            out->close();
-            delete in;
-            delete out;
+            std::ifstream in;
+            std::ofstream out;
+            in.open(inputFileName);
+            out.open(outputFileName);
+            cryptoCtx.DecryptFile(in, out, options.GetPassword());
+            in.close();
+            out.close();
             std::print("File decoded successfully\n");
             break;
         }
         case COMMAND_TYPE::CHECKSUM: {
             std::string inputFileName = options.GetInputFile();
-            std::ifstream *in = new std::ifstream();
-            in->open(inputFileName);
-            std::string result = cryptoCtx.CalculateChecksum(*(std::iostream *)in);
-            in->close();
+            std::ifstream in;
+            in.open(inputFileName);
+            std::string result = cryptoCtx.CalculateChecksum(in);
+            in.close();
             std::print("Checksum: {}\n", result);
             break;
         }

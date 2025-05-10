@@ -1,12 +1,9 @@
 #include "crypto_guard_ctx.h"
-#include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <iterator>
 #include <memory>
 #include <openssl/evp.h>
 #include <sstream>
-#include <streambuf>
 #include <vector>
 
 #define BUFSIZE 1024
@@ -64,64 +61,54 @@ struct CryptoGuardCtx::Impl {
     AesCipherParams params;
 
     // Заготовка приватных методов шифрования, дешифрования и расчета контрольной суммы
-    void Encrypt(std::iostream &inStream, std::iostream &outStream, std::string_view password) {
+    void Encrypt(std::istream &inStream, std::ostream &outStream, std::string_view password) {
         params = CreateChiperParamsFromPassword(password);
         params.encrypt = 1;
-        std::vector<char> outBuf(16 + EVP_MAX_BLOCK_LENGTH);
-        std::vector<char> inBuf(16);
+        std::vector<unsigned char> outBuf(16 + EVP_MAX_BLOCK_LENGTH);
+        std::vector<unsigned char> inBuf(16);
         int outLen = 0;
-        std::ifstream *in = (std::ifstream *)&inStream;
-        std::ofstream *op = (std::ofstream *)&outStream;
 
         EVP_CipherInit_ex(ctx.get(), params.cipher, nullptr, params.key.data(), params.iv.data(), params.encrypt);
-
-        while (in->read(inBuf.data(), inBuf.size())) {
-            EVP_CipherUpdate(ctx.get(), (unsigned char *)outBuf.data(), &outLen, (unsigned char *)inBuf.data(),
-                             in->gcount());
-            op->write(outBuf.data(), outLen);
+        while (inStream.read((char *)inBuf.data(), inBuf.size())) {
+            EVP_CipherUpdate(ctx.get(), outBuf.data(), &outLen, inBuf.data(), inStream.gcount());
+            outStream.write((char *)outBuf.data(), outLen);
         }
 
-        EVP_CipherUpdate(ctx.get(), (unsigned char *)outBuf.data(), &outLen, (unsigned char *)inBuf.data(),
-                         in->gcount());
-        EVP_CipherFinal_ex(ctx.get(), (unsigned char *)outBuf.data(), &outLen);
-        op->write(outBuf.data(), outLen);
+        EVP_CipherUpdate(ctx.get(), outBuf.data(), &outLen, inBuf.data(), inStream.gcount());
+        EVP_CipherFinal_ex(ctx.get(), outBuf.data(), &outLen);
+        outStream.write((char *)outBuf.data(), outLen);
     }
 
-    void Decrypt(std::iostream &inStream, std::iostream &outStream, std::string_view password) {
+    void Decrypt(std::istream &inStream, std::ostream &outStream, std::string_view password) {
         params = CreateChiperParamsFromPassword(password);
         params.encrypt = 0;
-        std::vector<char> outBuf(16 + EVP_MAX_BLOCK_LENGTH);
-        std::vector<char> inBuf(16);
+        std::vector<unsigned char> outBuf(16 + EVP_MAX_BLOCK_LENGTH);
+        std::vector<unsigned char> inBuf(16);
         int outLen = 0;
-        std::ifstream *in = (std::ifstream *)&inStream;
-        std::ofstream *op = (std::ofstream *)&outStream;
 
         EVP_CipherInit_ex(ctx.get(), params.cipher, nullptr, params.key.data(), params.iv.data(), params.encrypt);
-        while (in->read(inBuf.data(), inBuf.size())) {
-            EVP_CipherUpdate(ctx.get(), (unsigned char *)outBuf.data(), &outLen, (unsigned char *)inBuf.data(),
-                             in->gcount());
-            op->write(outBuf.data(), outLen);
+        while (inStream.read((char *)inBuf.data(), inBuf.size())) {
+            EVP_CipherUpdate(ctx.get(), outBuf.data(), &outLen, inBuf.data(), inStream.gcount());
+            outStream.write((char *)outBuf.data(), outLen);
         }
 
-        EVP_CipherUpdate(ctx.get(), (unsigned char *)outBuf.data(), &outLen, (unsigned char *)inBuf.data(),
-                         in->gcount());
-        EVP_CipherFinal_ex(ctx.get(), (unsigned char *)outBuf.data(), &outLen);
-        op->write(outBuf.data(), outLen);
+        EVP_CipherUpdate(ctx.get(), outBuf.data(), &outLen, inBuf.data(), inStream.gcount());
+        EVP_CipherFinal_ex(ctx.get(), outBuf.data(), &outLen);
+        outStream.write((char *)outBuf.data(), outLen);
     }
 
-    std::string CalculateChecksum(std::iostream &inStream) {
+    std::string CalculateChecksum(std::istream &inStream) {
         const EVP_MD *md;
         unsigned char md_value[EVP_MAX_MD_SIZE];
         unsigned int md_len;
         md = EVP_get_digestbyname("md5");
         EVP_DigestInit(ctxMd.get(), md);
-        std::vector<char> inBuf(16);
-        std::ifstream *in = (std::ifstream *)&inStream;
+        std::vector<unsigned char> inBuf(16);
 
-        while (in->read(inBuf.data(), inBuf.size())) {
-            EVP_DigestUpdate(ctxMd.get(), (unsigned char *)inBuf.data(), in->gcount());
+        while (inStream.read((char *)inBuf.data(), inBuf.size())) {
+            EVP_DigestUpdate(ctxMd.get(), inBuf.data(), inStream.gcount());
         }
-        EVP_DigestUpdate(ctxMd.get(), (unsigned char *)inBuf.data(), in->gcount());
+        EVP_DigestUpdate(ctxMd.get(), inBuf.data(), inStream.gcount());
         EVP_DigestFinal(ctxMd.get(), md_value, &md_len);
 
         /*char* converted=new char[md_len];
@@ -144,12 +131,12 @@ struct CryptoGuardCtx::Impl {
 CryptoGuardCtx::CryptoGuardCtx() : pImpl_(std::make_unique<Impl>()){};
 CryptoGuardCtx::~CryptoGuardCtx() = default;
 
-void CryptoGuardCtx::EncryptFile(std::iostream &inStream, std::iostream &outStream, std::string_view password) {
+void CryptoGuardCtx::EncryptFile(std::istream &inStream, std::ostream &outStream, std::string_view password) {
     pImpl_->Encrypt(inStream, outStream, password);
 };
-void CryptoGuardCtx::DecryptFile(std::iostream &inStream, std::iostream &outStream, std::string_view password) {
+void CryptoGuardCtx::DecryptFile(std::istream &inStream, std::ostream &outStream, std::string_view password) {
     pImpl_->Decrypt(inStream, outStream, password);
 };
-std::string CryptoGuardCtx::CalculateChecksum(std::iostream &inStream) { return pImpl_->CalculateChecksum(inStream); };
+std::string CryptoGuardCtx::CalculateChecksum(std::istream &inStream) { return pImpl_->CalculateChecksum(inStream); };
 
 }  // namespace CryptoGuard
