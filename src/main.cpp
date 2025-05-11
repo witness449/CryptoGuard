@@ -1,5 +1,9 @@
 #include "cmd_options.h"
 #include "crypto_guard_ctx.h"
+#include <boost/scope/scope_exit.hpp>
+#include <boost/scope/scope_fail.hpp>
+#include <boost/scope/scope_success.hpp>
+#include <exception>
 #include <fstream>
 #include <iostream>
 #include <openssl/evp.h>
@@ -69,9 +73,14 @@ int main(int argc, char *argv[]) {
             std::ofstream out;
             in.open(inputFileName);
             out.open(outputFileName);
+            boost::scope::scope_fail failGuard{[&in, &out] {
+                in.close();
+                out.close();
+            }};
+            if (!in.is_open() || !out.is_open()) {
+                throw std::runtime_error{"File was not opened"};
+            }
             cryptoCtx.EncryptFile(in, out, options.GetPassword());
-            in.close();
-            out.close();
             std::print("File encoded successfully\n");
             break;
         }
@@ -83,9 +92,14 @@ int main(int argc, char *argv[]) {
             std::ofstream out;
             in.open(inputFileName);
             out.open(outputFileName);
+            boost::scope::scope_fail failGuard{[&in, &out] {
+                in.close();
+                out.close();
+            }};
+            if (!in.is_open() || !out.is_open()) {
+                throw std::runtime_error{"File was not opened"};
+            }
             cryptoCtx.DecryptFile(in, out, options.GetPassword());
-            in.close();
-            out.close();
             std::print("File decoded successfully\n");
             break;
         }
@@ -93,8 +107,11 @@ int main(int argc, char *argv[]) {
             std::string inputFileName = options.GetInputFile();
             std::ifstream in;
             in.open(inputFileName);
+            boost::scope::scope_fail failGuard{[&in] { in.close(); }};
+            if (!in.is_open()) {
+                throw std::runtime_error{"File was not opened"};
+            }
             std::string result = cryptoCtx.CalculateChecksum(in);
-            in.close();
             std::print("Checksum: {}\n", result);
             break;
         }

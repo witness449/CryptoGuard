@@ -4,6 +4,7 @@
 #include <memory>
 #include <openssl/evp.h>
 #include <sstream>
+#include <stdexcept>
 #include <vector>
 
 #define BUFSIZE 1024
@@ -101,7 +102,7 @@ struct CryptoGuardCtx::Impl {
         const EVP_MD *md;
         unsigned char md_value[EVP_MAX_MD_SIZE];
         unsigned int md_len;
-        md = EVP_get_digestbyname("md5");
+        md = EVP_get_digestbyname("SHA256");
         EVP_DigestInit(ctxMd.get(), md);
         std::vector<unsigned char> inBuf(16);
 
