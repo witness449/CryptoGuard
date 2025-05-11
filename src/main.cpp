@@ -60,23 +60,37 @@ int main(int argc, char *argv[]) {
         CryptoGuard::ProgramOptions options;
 
         // Вызов парсинга аргументов
-        options.Parse(argc, argv);
+        if (!options.Parse(argc, argv)) {
+            throw std::runtime_error("Incorrect command");
+        }
 
         CryptoGuard::CryptoGuardCtx cryptoCtx;
 
         using COMMAND_TYPE = CryptoGuard::ProgramOptions::COMMAND_TYPE;
+
+        // В зависимости от команды вызываем соответствующий блок
         switch (options.GetCommand()) {
         case COMMAND_TYPE::ENCRYPT: {
             std::string inputFileName = options.GetInputFile();
             std::string outputFileName = options.GetOutputFile();
+
+            // Проверка совпадений входящего и выходящего файлов
+            if (inputFileName == outputFileName) {
+                throw std::runtime_error{"I/O files are identical"};
+            }
+
             std::ifstream in;
             std::ofstream out;
             in.open(inputFileName);
             out.open(outputFileName);
+
+            // На случай выхода по исключению вызываются методы закрытия
             boost::scope::scope_fail failGuard{[&in, &out] {
                 in.close();
                 out.close();
             }};
+
+            // Проверка на корректность открытия файлов
             if (!in.is_open() || !out.is_open()) {
                 throw std::runtime_error{"File was not opened"};
             }
@@ -88,14 +102,23 @@ int main(int argc, char *argv[]) {
         case COMMAND_TYPE::DECRYPT: {
             std::string inputFileName = options.GetInputFile();
             std::string outputFileName = options.GetOutputFile();
+
+            // Проверка совпадений входящего и выходящего файлов
+            if (inputFileName == outputFileName) {
+                throw std::runtime_error{"I/O files are identical"};
+            }
             std::ifstream in;
             std::ofstream out;
             in.open(inputFileName);
             out.open(outputFileName);
+
+            // На случай выхода по исключению вызываются методы закрытия
             boost::scope::scope_fail failGuard{[&in, &out] {
                 in.close();
                 out.close();
             }};
+
+            // Проверка на корректность открытия файлов
             if (!in.is_open() || !out.is_open()) {
                 throw std::runtime_error{"File was not opened"};
             }
@@ -107,7 +130,11 @@ int main(int argc, char *argv[]) {
             std::string inputFileName = options.GetInputFile();
             std::ifstream in;
             in.open(inputFileName);
+
+            // На случай выхода по исключению вызываются методы закрытия
             boost::scope::scope_fail failGuard{[&in] { in.close(); }};
+
+            // Проверка на корректность открытия файла
             if (!in.is_open()) {
                 throw std::runtime_error{"File was not opened"};
             }

@@ -44,7 +44,8 @@ bool ProgramOptions::Parse(int argc, char *argv[]) {
         } else if (vm.count("input") && vm.count("output") && vm.count("password") && vm.count("command") &&
                    command_ != COMMAND_TYPE::CHECKSUM && command_ != COMMAND_TYPE::NONE) {
             return true;
-        } else if (vm.count("input") && command_ == COMMAND_TYPE::CHECKSUM) {
+        } else if (vm.count("input") && command_ == COMMAND_TYPE::CHECKSUM && !vm.count("output") &&
+                   !vm.count("password")) {
             return true;
         } else {
             std::cout << "Please use help option " << std::endl;
