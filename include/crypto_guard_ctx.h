@@ -25,7 +25,7 @@ public:
 private:
     class Impl;
 
-    //Реализация идиомы Impl
+    // Реализация идиомы Impl
     std::experimental::propagate_const<std::unique_ptr<Impl>> pImpl_;
 };
 
