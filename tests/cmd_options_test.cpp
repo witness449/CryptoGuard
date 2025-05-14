@@ -1,6 +1,7 @@
 #include "cmd_options.h"
 #include <gtest/gtest.h>
 #include <memory>
+#include <stdexcept>
 
 // Инициализация объекта проверяемого класса
 class cmd_options_test : public testing::Test {
@@ -34,7 +35,14 @@ TEST_F(cmd_options_test, encryptCommand) {
     char ninth[] = "encrypt";
     char *argv[] = {first, second, third, fourth, fifth, sixth, seventh, eighth, ninth};
     int argc = sizeof(argv) / sizeof(char *);
-    EXPECT_EQ(GetPo()->Parse(argc, argv), true);
+    GetPo()->Parse(argc, argv);
+    CryptoGuard::ProgramOptions::COMMAND_TYPE command = GetPo()->GetCommand();
+    std::string inFile = GetPo()->GetInputFile();
+    std::string outFile = GetPo()->GetOutputFile();
+    std::string password = GetPo()->GetPassword();
+    bool res = (inFile == "input.txt" && outFile == "output.txt" && password == "1234" &&
+                command == CryptoGuard::ProgramOptions::COMMAND_TYPE::ENCRYPT);
+    EXPECT_EQ(res, true);
 }
 
 // Негативный тест. проверка на опечатку в команде

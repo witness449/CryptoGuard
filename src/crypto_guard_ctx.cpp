@@ -35,16 +35,11 @@ struct CryptoGuardCtx::Impl {
         // Создание указателей
         ctx.reset(EVP_CIPHER_CTX_new());
         ctxMd.reset(EVP_MD_CTX_new());
-        // Очистка памяти (м. б. лишнее)
-        EVP_CIPHER_CTX_init(ctx.get());
-        EVP_MD_CTX_init(ctxMd.get());
     }
 
     // Деструктор
     ~Impl() {
         // Очистка памяти
-        EVP_CIPHER_CTX_init(ctx.get());
-        EVP_MD_CTX_init(ctxMd.get());
         EVP_cleanup();
     }
 
@@ -92,6 +87,7 @@ struct CryptoGuardCtx::Impl {
 
     // Метод шифрования, аргументы - входной и выходной потоки, пароль
     void Encrypt(std::istream &inStream, std::ostream &outStream, std::string_view password) {
+        EVP_CIPHER_CTX_init(ctx.get());
         // inStream.exceptions(std::istream::badbit);
         // Проверка состояния входного и выходного потоков
         if (!inStream.good() && !outStream.good()) {
@@ -109,25 +105,29 @@ struct CryptoGuardCtx::Impl {
         CipherInit();
 
         // Цикл шифрования согласно размеру входного буфера
-        while (inStream.read((char *)inBuf.data(), inBuf.size())) {
+        while (inStream.read(reinterpret_cast<char *>(inBuf.data()), inBuf.size())) {
             CipherUpdate(outBuf, outLen, inBuf, inStream.gcount());
             // Проверка состояния входного и выходного потоков
-            if (!inStream.good() && !outStream.good()) {
-                throw std::runtime_error("Streams not allow read/write");
+            if (!inStream.good()) {
+                throw std::runtime_error("Stream not allow read");
             }
-            outStream.write((char *)outBuf.data(), outLen);
+            outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
+            if (!outStream.good()) {
+                throw std::runtime_error("Stream not allow write");
+            }
         }
         // Поскольку выход из цикла происходит по факту прочтения потока, необходимо вызывать метод шифрования еще раз
         CipherUpdate(outBuf, outLen, inBuf, inStream.gcount());
         CipherFinal(outBuf, outLen);
+        outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
         if (!outStream.good()) {
-            throw std::runtime_error("Streams not allow read/write");
+            throw std::runtime_error("Stream not allow write");
         }
-        outStream.write((char *)outBuf.data(), outLen);
     }
 
     // Метод дешифровки полностью аналогичен методу шифрования
     void Decrypt(std::istream &inStream, std::ostream &outStream, std::string_view password) {
+        EVP_CIPHER_CTX_init(ctx.get());
         if (!inStream.good() && !outStream.good()) {
             throw std::runtime_error("Streams not allow read/write");
         }
@@ -138,26 +138,30 @@ struct CryptoGuardCtx::Impl {
         int outLen = 0;
 
         CipherInit();
-        while (inStream.read((char *)inBuf.data(), inBuf.size())) {
+        while (inStream.read(reinterpret_cast<char *>(inBuf.data()), inBuf.size())) {
             CipherUpdate(outBuf, outLen, inBuf, inStream.gcount());
-            if (!inStream.good() && !outStream.good()) {
-                throw std::runtime_error("Streams not allow read/write");
+            if (!inStream.good()) {
+                throw std::runtime_error("Streams not allow read");
             }
-            outStream.write((char *)outBuf.data(), outLen);
+            outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
+            if (!outStream.good()) {
+                throw std::runtime_error("Stream not allow write");
+            }
         }
         CipherUpdate(outBuf, outLen, inBuf, inStream.gcount());
         CipherFinal(outBuf, outLen);
+        outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
         if (!outStream.good()) {
-            throw std::runtime_error("Streams not allow read/write");
+            throw std::runtime_error("Stream not allow write");
         }
-        outStream.write((char *)outBuf.data(), outLen);
     }
 
     // Метод расчета контрольной суммы
     std::string CalculateChecksum(std::istream &inStream) {
+        EVP_MD_CTX_init(ctxMd.get());
         // Проверка состояния потока
         if (!inStream.good()) {
-            throw std::runtime_error("Streams not allow read");
+            throw std::runtime_error("Stream not allow read");
         }
 
         const EVP_MD *md;
@@ -174,10 +178,10 @@ struct CryptoGuardCtx::Impl {
         std::vector<unsigned char> inBuf(16);
 
         // Цикл подсчета контрольной суммы
-        while (inStream.read((char *)inBuf.data(), inBuf.size())) {
+        while (inStream.read(reinterpret_cast<char *>(inBuf.data()), inBuf.size())) {
             // Проверка состония потока
             if (!inStream.good()) {
-                throw std::runtime_error("Streams not allow read");
+                throw std::runtime_error("Stream not allow read");
             }
             // Расчет контрольной суммы согласно размеру входного буфера
             if (!EVP_DigestUpdate(ctxMd.get(), inBuf.data(), inStream.gcount())) {
