@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
             std::print("Checksum: {}\n", result);
             break;
         }
-        case COMMAND_TYPE::NONE:
+        case COMMAND_TYPE::HELP:
             break;
         default:
             throw std::runtime_error{"Unsupported command"};
