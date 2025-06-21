@@ -87,11 +87,13 @@ struct CryptoGuardCtx::Impl {
 
     // Метод шифрования, аргументы - входной и выходной потоки, пароль
     void Encrypt(std::istream &inStream, std::ostream &outStream, std::string_view password) {
-        EVP_CIPHER_CTX_init(ctx.get());
         // inStream.exceptions(std::istream::badbit);
         // Проверка состояния входного и выходного потоков
         if (!inStream.good() && !outStream.good()) {
             throw std::runtime_error("Streams not allow read/write");
+        }
+        if (!EVP_CIPHER_CTX_init(ctx.get())) {
+            throw std::runtime_error(GetError());
         }
 
         params = CreateChiperParamsFromPassword(password);
@@ -127,9 +129,11 @@ struct CryptoGuardCtx::Impl {
 
     // Метод дешифровки полностью аналогичен методу шифрования
     void Decrypt(std::istream &inStream, std::ostream &outStream, std::string_view password) {
-        EVP_CIPHER_CTX_init(ctx.get());
         if (!inStream.good() && !outStream.good()) {
             throw std::runtime_error("Streams not allow read/write");
+        }
+        if (!EVP_CIPHER_CTX_init(ctx.get())) {
+            throw std::runtime_error(GetError());
         }
         params = CreateChiperParamsFromPassword(password);
         params.encrypt = 0;
@@ -158,10 +162,12 @@ struct CryptoGuardCtx::Impl {
 
     // Метод расчета контрольной суммы
     std::string CalculateChecksum(std::istream &inStream) {
-        EVP_MD_CTX_init(ctxMd.get());
         // Проверка состояния потока
         if (!inStream.good()) {
             throw std::runtime_error("Stream not allow read");
+        }
+        if (!EVP_MD_CTX_init(ctxMd.get())) {
+            throw std::runtime_error(GetError());
         }
 
         const EVP_MD *md;
@@ -199,13 +205,6 @@ struct CryptoGuardCtx::Impl {
         if (!EVP_DigestFinal(ctxMd.get(), md_value, &md_len)) {
             throw std::runtime_error(GetError());
         }
-
-        /*char* converted=new char[md_len];
-        int i;
-        for(i=0; i<md_len; i++){
-            sprintf(&converted[i*2], "%02X", md_value[i]);
-        }
-        printf("%s\n", converted);*/
 
         // Преобразование к с в строку
         std::stringstream ss;

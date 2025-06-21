@@ -53,12 +53,4 @@ void ProgramOptions::Parse(int argc, char *argv[]) {
     }
 }
 
-/*std::istream& operator>>(std::istream& is, ProgramOptions& po){
-    std::string tok;
-    is >> tok;
-    po.command_=po.commandMapping_.at(tok);
-
-    return is;
-}*/
-
 }  // namespace CryptoGuard
