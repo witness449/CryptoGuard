@@ -59,157 +59,169 @@ struct CryptoGuardCtx::Impl {
     }
 
     // Получение описания ошибки OpenSSL
-    char *GetError() { return ERR_error_string(ERR_get_error(), NULL); }
+    const std::string_view GetError() { return ERR_error_string(ERR_get_error(), NULL); }
 
     // Обертка для функции инициализации шифра
-    void CipherInit() {
+    void CipherInit(const AesCipherParams &params) {
         if (!EVP_CipherInit_ex(ctx.get(), params.cipher, nullptr, params.key.data(), params.iv.data(),
                                params.encrypt)) {
-            throw std::runtime_error(GetError());
+            throw std::runtime_error{std::string(GetError())};
         }
     }
 
     // Обертка для функции шифрования
     void CipherUpdate(std::vector<unsigned char> &outBuf, int &outLen, std::vector<unsigned char> &inBuf, int bufSize) {
         if (!EVP_CipherUpdate(ctx.get(), outBuf.data(), &outLen, inBuf.data(), bufSize)) {
-            throw std::runtime_error(GetError());
+            throw std::runtime_error{std::string(GetError())};
         }
     }
 
     // Обертка для функции дошифровки
     void CipherFinal(std::vector<unsigned char> &outBuf, int &outLen) {
         if (!EVP_CipherFinal_ex(ctx.get(), outBuf.data(), &outLen)) {
-            throw std::runtime_error(GetError());
+            throw std::runtime_error{std::string(GetError())};
         }
     }
 
-    AesCipherParams params;
-
     // Метод шифрования, аргументы - входной и выходной потоки, пароль
     void Encrypt(std::istream &inStream, std::ostream &outStream, std::string_view password) {
-        // inStream.exceptions(std::istream::badbit);
+
         // Проверка состояния входного и выходного потоков
         if (!inStream.good() && !outStream.good()) {
-            throw std::runtime_error("Streams not allow read/write");
-        }
-        if (!EVP_CIPHER_CTX_init(ctx.get())) {
-            throw std::runtime_error(GetError());
+            throw std::runtime_error{"I/O stream states are not 'good'"};
         }
 
-        params = CreateChiperParamsFromPassword(password);
+        // Инициализация библиотеки
+        if (!EVP_CIPHER_CTX_init(ctx.get())) {
+            throw std::runtime_error{std::string(GetError())};
+        }
+        AesCipherParams params = CreateChiperParamsFromPassword(password);
         params.encrypt = 1;
+        CipherInit(params);
 
         // Подготовка буферов
-        std::vector<unsigned char> outBuf(16 + EVP_MAX_BLOCK_LENGTH);
-        std::vector<unsigned char> inBuf(16);
+        std::vector<unsigned char> outBuf(1024 + EVP_MAX_BLOCK_LENGTH);
+        std::vector<unsigned char> inBuf(1024);
         int outLen = 0;
-
-        CipherInit();
 
         // Цикл шифрования согласно размеру входного буфера
         while (inStream.read(reinterpret_cast<char *>(inBuf.data()), inBuf.size())) {
-            CipherUpdate(outBuf, outLen, inBuf, inStream.gcount());
             // Проверка состояния входного и выходного потоков
             if (!inStream.good()) {
-                throw std::runtime_error("Stream not allow read");
+                throw std::runtime_error{"An error occured during input stream read attempt"};
             }
+            CipherUpdate(outBuf, outLen, inBuf, inStream.gcount());
             outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
             if (!outStream.good()) {
-                throw std::runtime_error("Stream not allow write");
+                throw std::runtime_error{"An error occured during output stream write attempt"};
             }
         }
         // Поскольку выход из цикла происходит по факту прочтения потока, необходимо вызывать метод шифрования еще раз
         CipherUpdate(outBuf, outLen, inBuf, inStream.gcount());
+        outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
+        if (!outStream.good()) {
+            throw std::runtime_error{"An error occured during output stream write attempt"};
+        }
         CipherFinal(outBuf, outLen);
         outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
         if (!outStream.good()) {
-            throw std::runtime_error("Stream not allow write");
+            throw std::runtime_error{"An error occured during output stream write attempt"};
         }
     }
 
     // Метод дешифровки полностью аналогичен методу шифрования
     void Decrypt(std::istream &inStream, std::ostream &outStream, std::string_view password) {
+        // Проверка состояния входного и выходного потоков
         if (!inStream.good() && !outStream.good()) {
-            throw std::runtime_error("Streams not allow read/write");
+            throw std::runtime_error{"I/O stream states are not 'good'"};
         }
+
+        // Инициализация библиотеки
         if (!EVP_CIPHER_CTX_init(ctx.get())) {
-            throw std::runtime_error(GetError());
+            throw std::runtime_error{std::string(GetError())};
         }
-        params = CreateChiperParamsFromPassword(password);
+        AesCipherParams params = CreateChiperParamsFromPassword(password);
         params.encrypt = 0;
-        std::vector<unsigned char> outBuf(16 + EVP_MAX_BLOCK_LENGTH);
-        std::vector<unsigned char> inBuf(16);
+        CipherInit(params);
+
+        std::vector<unsigned char> outBuf(1024 + EVP_MAX_BLOCK_LENGTH);
+        std::vector<unsigned char> inBuf(1024);
         int outLen = 0;
 
-        CipherInit();
         while (inStream.read(reinterpret_cast<char *>(inBuf.data()), inBuf.size())) {
-            CipherUpdate(outBuf, outLen, inBuf, inStream.gcount());
             if (!inStream.good()) {
-                throw std::runtime_error("Streams not allow read");
+                throw std::runtime_error{"An error occured during input stream read attempt"};
             }
+            CipherUpdate(outBuf, outLen, inBuf, inStream.gcount());
             outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
             if (!outStream.good()) {
-                throw std::runtime_error("Stream not allow write");
+                throw std::runtime_error{"An error occured during output stream write attempt"};
             }
         }
         CipherUpdate(outBuf, outLen, inBuf, inStream.gcount());
+        outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
+        if (!outStream.good()) {
+            throw std::runtime_error{"An error occured during output stream write attempt"};
+        }
         CipherFinal(outBuf, outLen);
         outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
         if (!outStream.good()) {
-            throw std::runtime_error("Stream not allow write");
+            throw std::runtime_error{"An error occured during output stream write attempt"};
         }
     }
 
     // Метод расчета контрольной суммы
     std::string CalculateChecksum(std::istream &inStream) {
+
+        auto digestUpdate = [&](std::vector<unsigned char> &inBuf) {
+            if (!EVP_DigestUpdate(ctxMd.get(), inBuf.data(), inStream.gcount())) {
+                throw std::runtime_error{std::string(GetError())};
+            }
+        };
+
         // Проверка состояния потока
         if (!inStream.good()) {
-            throw std::runtime_error("Stream not allow read");
+            throw std::runtime_error{"Input stream state are not 'good'"};
         }
         if (!EVP_MD_CTX_init(ctxMd.get())) {
-            throw std::runtime_error(GetError());
+            throw std::runtime_error{std::string(GetError())};
         }
 
-        const EVP_MD *md;
-        unsigned char md_value[EVP_MAX_MD_SIZE];
+        std::array<unsigned char, EVP_MAX_MD_SIZE> md_value;
         unsigned int md_len;
-        md = EVP_get_digestbyname("SHA256");
+        const EVP_MD *md = EVP_get_digestbyname("SHA256");
 
         // Инициализация контекста подсчета контрольной суммы
         if (!EVP_DigestInit(ctxMd.get(), md)) {
-            throw std::runtime_error(GetError());
+            throw std::runtime_error{std::string(GetError())};
         }
 
         // Подготовка буфера
-        std::vector<unsigned char> inBuf(16);
+        std::vector<unsigned char> inBuf(1024);
 
         // Цикл подсчета контрольной суммы
         while (inStream.read(reinterpret_cast<char *>(inBuf.data()), inBuf.size())) {
             // Проверка состония потока
             if (!inStream.good()) {
-                throw std::runtime_error("Stream not allow read");
+                throw std::runtime_error{"An error occured during input stream read attempt"};
             }
             // Расчет контрольной суммы согласно размеру входного буфера
-            if (!EVP_DigestUpdate(ctxMd.get(), inBuf.data(), inStream.gcount())) {
-                throw std::runtime_error(GetError());
-            }
+            digestUpdate(inBuf);
         }
 
         // Поскольку выход из цикла происходит по факту прочтения потока, необходимо вызывать функцию расчета к с еще
         // раз
-        if (!EVP_DigestUpdate(ctxMd.get(), inBuf.data(), inStream.gcount())) {
-            throw std::runtime_error(GetError());
-        }
+        digestUpdate(inBuf);
 
         // Заполнение массива полученной к с
-        if (!EVP_DigestFinal(ctxMd.get(), md_value, &md_len)) {
-            throw std::runtime_error(GetError());
+        if (!EVP_DigestFinal(ctxMd.get(), md_value.data(), &md_len)) {
+            throw std::runtime_error{std::string(GetError())};
         }
 
         // Преобразование к с в строку
         std::stringstream ss;
         for (int i = 0; i < md_len; i++) {
-            ss << std::setfill('0') << std::setw(2) << std::hex << (unsigned int)md_value[i];
+            std::print(ss, "{:02x}", md_value[i]);
         }
         std::string result = ss.str();
 
