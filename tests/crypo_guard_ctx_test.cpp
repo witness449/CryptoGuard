@@ -21,12 +21,11 @@ TEST_F(crypto_guard_ctx__test, encrypt) {
     std::ostringstream resStream;
     GetCtx()->EncryptFile(inStream, outStream, "23456");
     std::array<char, 16> res = {'\xc6', '\x12', '\x9a', '\xb4', '-', ':',    '\xc2', 'P',
-                    'N',    '\x8f', ' ',    'p',    'E', '\xe3', '5',    '\x13'};
+                                'N',    '\x8f', ' ',    'p',    'E', '\xe3', '5',    '\x13'};
     resStream.write(res.data(), res.size());
     bool flag = true;
     flag = (resStream.str() == outStream.str());
     EXPECT_EQ(flag, true);
-
 }
 
 // Негативный тест, что команда encrypt вбрасывает исключение при некорректном состоянии потока вывода
@@ -42,7 +41,8 @@ TEST_F(crypto_guard_ctx__test, encryptEmptyPass) {
     std::stringstream outStream;
     std::ostringstream resStream;
     GetCtx()->EncryptFile(inStream, outStream, "");
-    std::array<char, 16> res= {'\xab', '\x92', '\xc3', 'Y', '[', '$', '5', '[', ';', '\\', '\xab', '3', '\f', '}', '\xb2', '\x04'};
+    std::array<char, 16> res = {'\xab', '\x92', '\xc3', 'Y', '[',  '$', '5',    '[',
+                                ';',    '\\',   '\xab', '3', '\f', '}', '\xb2', '\x04'};
     resStream.write(res.data(), res.size());
     bool flag = true;
     flag = (resStream.str() == outStream.str());
@@ -55,7 +55,7 @@ TEST_F(crypto_guard_ctx__test, decrypt) {
     std::stringstream outStream;
 
     std::array<char, 16> test = {'\xc6', '\x12', '\x9a', '\xb4', '-', ':',    '\xc2', 'P',
-                     'N',    '\x8f', ' ',    'p',    'E', '\xe3', '5',    '\x13'};
+                                 'N',    '\x8f', ' ',    'p',    'E', '\xe3', '5',    '\x13'};
     inStream.write(test.data(), test.size());
     GetCtx()->DecryptFile(inStream, outStream, "23456");
 
@@ -69,8 +69,8 @@ TEST_F(crypto_guard_ctx__test, decryptEmptyPass) {
     std::stringstream inStream;
     std::stringstream outStream;
 
-    std::array<char, 16> test  = {'\xab', '\x92', '\xc3', 'Y', '[',  '$', '5',    '[',
-                     ';',    '\\',   '\xab', '3', '\f', '}', '\xb2', '\x04'};
+    std::array<char, 16> test = {'\xab', '\x92', '\xc3', 'Y', '[',  '$', '5',    '[',
+                                 ';',    '\\',   '\xab', '3', '\f', '}', '\xb2', '\x04'};
     inStream.write(test.data(), test.size());
     GetCtx()->DecryptFile(inStream, outStream, "");
 

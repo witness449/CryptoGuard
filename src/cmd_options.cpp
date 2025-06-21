@@ -46,7 +46,7 @@ void ProgramOptions::Parse(int argc, char *argv[]) {
         } else if (vm.count("input") && command_ == COMMAND_TYPE::CHECKSUM && !vm.count("output") &&
                    !vm.count("password")) {
         } else {
-            throw (std::runtime_error("Please use help option"));
+            throw(std::runtime_error("Please use help option"));
         }
     } catch (const std::exception &e) {
         throw;
