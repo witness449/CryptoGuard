@@ -1,5 +1,6 @@
 #include "cmd_options.h"
 #include <iostream>
+#include <stdexcept>
 
 namespace CryptoGuard {
 
@@ -33,27 +34,22 @@ ProgramOptions::ProgramOptions() : desc_("Allowed options") {
 ProgramOptions::~ProgramOptions() = default;
 
 // Парсинг аргументов командной строки
-bool ProgramOptions::Parse(int argc, char *argv[]) {
+void ProgramOptions::Parse(int argc, char *argv[]) {
     try {
         boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc_), vm);
         boost::program_options::notify(vm);
 
         if (vm.count("help") && vm.size() == 1) {
             std::cout << desc_ << std::endl;
-            return true;
         } else if (vm.count("input") && vm.count("output") && vm.count("password") && vm.count("command") &&
                    command_ != COMMAND_TYPE::CHECKSUM && command_ != COMMAND_TYPE::NONE) {
-            return true;
         } else if (vm.count("input") && command_ == COMMAND_TYPE::CHECKSUM && !vm.count("output") &&
                    !vm.count("password")) {
-            return true;
         } else {
-            std::cout << "Please use help option " << std::endl;
-            return false;
+            throw (std::runtime_error("Please use help option"));
         }
     } catch (const std::exception &e) {
-        std::print(std::cerr, "Error: {}\n", e.what());
-        return false;
+        throw;
     }
 }
 

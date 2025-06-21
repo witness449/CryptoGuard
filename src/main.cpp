@@ -60,9 +60,7 @@ int main(int argc, char *argv[]) {
         CryptoGuard::ProgramOptions options;
 
         // Вызов парсинга аргументов
-        if (!options.Parse(argc, argv)) {
-            throw std::runtime_error("Incorrect command");
-        }
+        options.Parse(argc, argv);
 
         CryptoGuard::CryptoGuardCtx cryptoCtx;
 

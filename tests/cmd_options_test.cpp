@@ -15,27 +15,25 @@ public:
 
 // Позитивный тест, что аргумент --help работает правильно
 TEST_F(cmd_options_test, helpOption) {
-    char first[] = "filepath";
-    char second[] = "--help";
-    char *argv[] = {first, second};
-    int argc = sizeof(argv) / sizeof(char *);
-    EXPECT_EQ(GetPo()->Parse(argc, argv), true);
+    std::array<const char*, 2> argv;
+    argv[0]="filepath";
+    argv[1]="--help";
+    ASSERT_NO_THROW(GetPo()->Parse(argv.size(), const_cast<char**>(argv.data())));
 }
 
 // Позитивный тест для сценария использования аргументов для шифрования
 TEST_F(cmd_options_test, encryptCommand) {
-    char first[] = "filepath";
-    char second[] = "-i";
-    char third[] = "input.txt";
-    char fourth[] = "-o";
-    char fifth[] = "output.txt";
-    char sixth[] = "-p";
-    char seventh[] = "1234";
-    char eighth[] = "--command";
-    char ninth[] = "encrypt";
-    char *argv[] = {first, second, third, fourth, fifth, sixth, seventh, eighth, ninth};
-    int argc = sizeof(argv) / sizeof(char *);
-    GetPo()->Parse(argc, argv);
+    std::array<const char*, 9> argv;
+    argv[0]= "filepath";
+    argv[1] = "-i";
+    argv[2] = "input.txt";
+    argv[3] = "-o";
+    argv[4] = "output.txt";
+    argv[5] = "-p";
+    argv[6] = "1234";
+    argv[7] = "--command";
+    argv[8] = "encrypt";
+    GetPo()->Parse(argv.size(), const_cast<char**>(argv.data()));
     CryptoGuard::ProgramOptions::COMMAND_TYPE command = GetPo()->GetCommand();
     std::string inFile = GetPo()->GetInputFile();
     std::string outFile = GetPo()->GetOutputFile();
@@ -56,9 +54,8 @@ TEST_F(cmd_options_test, encryptCommandWithMistake) {
     char seventh[] = "1234";
     char eighth[] = "--command";
     char ninth[] = "encryp";
-    char *argv[] = {first, second, third, fourth, fifth, sixth, seventh, eighth, ninth};
-    int argc = sizeof(argv) / sizeof(char *);
-    EXPECT_EQ(GetPo()->Parse(argc, argv), false);
+    std::array<char*, 9> argv = {first, second, third, fourth, fifth, sixth, seventh, eighth, ninth};
+    ASSERT_THROW(GetPo()->Parse(argv.size(), const_cast<char**>(argv.data())), std::runtime_error);
 }
 
 // Негативный тест, проверка того что аргументов командной строки меньше требуемых
@@ -70,9 +67,9 @@ TEST_F(cmd_options_test, argsLessThanNecessary) {
     char fifth[] = "output.txt";
     char sixth[] = "-p";
     char seventh[] = "1234";
-    char *argv[] = {first, second, third, fourth, fifth, sixth, seventh};
+    std::array<char*, 7> argv  = {first, second, third, fourth, fifth, sixth, seventh};
     int argc = sizeof(argv) / sizeof(char *);
-    EXPECT_EQ(GetPo()->Parse(argc, argv), false);
+    ASSERT_THROW(GetPo()->Parse(argv.size(), const_cast<char**>(argv.data())), std::runtime_error);
 }
 
 // Негавтивный тест, проверка использованяи аргумента --help с дополнительными аргументами
@@ -86,9 +83,8 @@ TEST_F(cmd_options_test, wrongHelpOptionUsing) {
     char seventh[] = "1234";
     char eighth[] = "--command";
     char ninth[] = "encrypt";
-    char *argv[] = {first, second, third, fourth, fifth, sixth, seventh, eighth, ninth};
-    int argc = sizeof(argv) / sizeof(char *);
-    EXPECT_EQ(GetPo()->Parse(argc, argv), false);
+    std::array<char*, 9> argv = {first, second, third, fourth, fifth, sixth, seventh, eighth, ninth};
+    ASSERT_THROW(GetPo()->Parse(argv.size(), const_cast<char**>(argv.data())), std::runtime_error);
 }
 
 // Негативный тест, проверка использования невалидных аргументов
@@ -102,7 +98,7 @@ TEST_F(cmd_options_test, wrongNames) {
     char seventh[] = "seven";
     char eighth[] = "--eight";
     char ninth[] = "encrypt";
-    char *argv[] = {first, second, third, fourth, fifth, sixth, seventh, eighth, ninth};
+    std::array<char*, 9> argv = {first, second, third, fourth, fifth, sixth, seventh, eighth, ninth};
     int argc = sizeof(argv) / sizeof(char *);
-    EXPECT_EQ(GetPo()->Parse(argc, argv), false);
+    ASSERT_THROW(GetPo()->Parse(argv.size(), const_cast<char**>(argv.data())), boost::program_options::error);
 }

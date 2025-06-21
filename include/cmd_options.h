@@ -22,7 +22,7 @@ public:
         return is;
     }
 
-    bool Parse(int argc, char *argv[]);
+    void Parse(int argc, char *argv[]);
 
     COMMAND_TYPE GetCommand() const { return command_; }
     std::string GetInputFile() const { return inputFile_; }

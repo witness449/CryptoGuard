@@ -18,17 +18,15 @@ public:
 TEST_F(crypto_guard_ctx__test, encrypt) {
     std::stringstream inStream("test");
     std::stringstream outStream;
-    std::stringstream resStream;
+    std::ostringstream resStream;
     GetCtx()->EncryptFile(inStream, outStream, "23456");
-    char buffer[16];
-    char res[16] = {'\xc6', '\x12', '\x9a', '\xb4', '-', ':',    '\xc2', 'P',
+    std::array<char, 16> res = {'\xc6', '\x12', '\x9a', '\xb4', '-', ':',    '\xc2', 'P',
                     'N',    '\x8f', ' ',    'p',    'E', '\xe3', '5',    '\x13'};
-    for (int i = 0; i < 16; i++) {
-        resStream << res[i];
-    }
+    resStream.write(res.data(), res.size());
     bool flag = true;
     flag = (resStream.str() == outStream.str());
     EXPECT_EQ(flag, true);
+
 }
 
 // Негативный тест, что команда encrypt вбрасывает исключение при некорректном состоянии потока вывода
@@ -42,13 +40,10 @@ TEST_F(crypto_guard_ctx__test, encryptAssert) {
 TEST_F(crypto_guard_ctx__test, encryptEmptyPass) {
     std::stringstream inStream("test");
     std::stringstream outStream;
-    std::stringstream resStream;
+    std::ostringstream resStream;
     GetCtx()->EncryptFile(inStream, outStream, "");
-    char buffer[16];
-    char res[16] = {'\xab', '\x92', '\xc3', 'Y', '[', '$', '5', '[', ';', '\\', '\xab', '3', '\f', '}', '\xb2', '\x04'};
-    for (int i = 0; i < 16; i++) {
-        resStream << res[i];
-    }
+    std::array<char, 16> res= {'\xab', '\x92', '\xc3', 'Y', '[', '$', '5', '[', ';', '\\', '\xab', '3', '\f', '}', '\xb2', '\x04'};
+    resStream.write(res.data(), res.size());
     bool flag = true;
     flag = (resStream.str() == outStream.str());
     EXPECT_EQ(flag, true);
@@ -59,11 +54,9 @@ TEST_F(crypto_guard_ctx__test, decrypt) {
     std::stringstream inStream;
     std::stringstream outStream;
 
-    char test[16] = {'\xc6', '\x12', '\x9a', '\xb4', '-', ':',    '\xc2', 'P',
+    std::array<char, 16> test = {'\xc6', '\x12', '\x9a', '\xb4', '-', ':',    '\xc2', 'P',
                      'N',    '\x8f', ' ',    'p',    'E', '\xe3', '5',    '\x13'};
-    for (int i = 0; i < 16; i++) {
-        inStream << test[i];
-    }
+    inStream.write(test.data(), test.size());
     GetCtx()->DecryptFile(inStream, outStream, "23456");
 
     bool flag = true;
@@ -76,11 +69,9 @@ TEST_F(crypto_guard_ctx__test, decryptEmptyPass) {
     std::stringstream inStream;
     std::stringstream outStream;
 
-    char test[16] = {'\xab', '\x92', '\xc3', 'Y', '[',  '$', '5',    '[',
+    std::array<char, 16> test  = {'\xab', '\x92', '\xc3', 'Y', '[',  '$', '5',    '[',
                      ';',    '\\',   '\xab', '3', '\f', '}', '\xb2', '\x04'};
-    for (int i = 0; i < 16; i++) {
-        inStream << test[i];
-    }
+    inStream.write(test.data(), test.size());
     GetCtx()->DecryptFile(inStream, outStream, "");
 
     bool flag = true;
