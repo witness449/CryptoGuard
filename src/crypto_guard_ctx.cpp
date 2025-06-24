@@ -187,7 +187,7 @@ struct CryptoGuardCtx::Impl {
             throw std::runtime_error{std::string(GetError())};
         }
 
-        std::array<unsigned char, EVP_MAX_MD_SIZE> md_value;
+        std::array<unsigned char, EVP_MAX_MD_SIZE> md_value{};
         unsigned int md_len;
         const EVP_MD *md = EVP_get_digestbyname("SHA256");
 
