@@ -36,7 +36,6 @@ TEST(cmd_options_test, encryptCommandWithMistake) {
 TEST(cmd_options_test, argsLessThanNecessary) {
     CryptoGuard::ProgramOptions po;
     std::array<const char *, 7> argv{"filepath", "-i", "input.txt", "-o", "output.txt", "-p", "1234"};
-    int argc = sizeof(argv) / sizeof(char *);
     ASSERT_THROW(po.Parse(argv.size(), const_cast<char **>(argv.data())), std::runtime_error);
 }
 
@@ -52,6 +51,5 @@ TEST(cmd_options_test, wrongHelpOptionUsing) {
 TEST(cmd_options_test, wrongNames) {
     CryptoGuard::ProgramOptions po;
     std::array<const char *, 9> argv = {"one", "--two", "three", "-f", "five", "-six", "seven", "--eight", "encrypt"};
-    int argc = sizeof(argv) / sizeof(char *);
     ASSERT_THROW(po.Parse(argv.size(), const_cast<char **>(argv.data())), boost::program_options::error);
 }
