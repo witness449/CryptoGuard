@@ -13,7 +13,7 @@
                 "-i",
                 "input.txt",
                 "--command",
-                "checksum"
+                "checksum"            
             ],
             "cwd": "${workspaceFolder}/build"
         }
